@@ -3,3 +3,6 @@
 .idea/
 .env
 VKinder.iml
+f_for_db.py
+f_for_vk.py
+main.py
