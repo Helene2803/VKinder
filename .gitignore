@@ -3,3 +3,5 @@
 .idea/
 .env
 VKinder.iml
+__pycache__/
+
