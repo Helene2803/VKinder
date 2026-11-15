@@ -193,8 +193,9 @@ class ApiVK:
 
 class DB(ApiVK):
 
-    def __init__(self, access_token):
+    def __init__(self, access_token, session):
         ApiVK.__init__(self, access_token)
+        self.session = session
 
     def insert_vk_user(self, user_id):
         """Создаёт или обновляет профиль пользователя в таблице vk_user.
@@ -209,8 +210,8 @@ class DB(ApiVK):
         if not age or not sex or not city_id:
             return None
         vk_user = VKUser(id=user_id, age=age, sex=sex, city_id=city_id)
-        merged = session.merge(vk_user)
-        session.commit()
+        merged = self.session.merge(vk_user)
+        self.session.commit()
         return merged
 
     def insert_candidates(self, user_id):
@@ -225,7 +226,7 @@ class DB(ApiVK):
             if not candidates_info:
                 return []
             existing = set(
-                session.execute(
+                self.session.execute(
                     select(Candidates.vk_id).where(Candidates.owner_id == user_id)
                 ).scalars()
             )
@@ -241,15 +242,15 @@ class DB(ApiVK):
                     link=candidate.get('link'),
                 ))
             if new_candidates:
-                session.add_all(new_candidates)
-                session.commit()
-            return session.execute(
+                self.session.add_all(new_candidates)
+                self.session.commit()
+            return self.session.execute(
                 select(Candidates)
                 .where(Candidates.owner_id == user_id)
                 .order_by(Candidates.id)
             ).scalars().all()
         except Exception:
-            session.rollback()
+            self.session.rollback()
             raise
 
     def insert_photos(self, user_id):
@@ -259,37 +260,37 @@ class DB(ApiVK):
         """
         # session = Session()
         try:
-            candidates = session.execute(
+            candidates = self.session.execute(
                 select(Candidates).where(Candidates.owner_id == user_id)
             ).scalars().all()
             for cand in candidates:
-                already = session.execute(
+                already = self.session.execute(
                     select(sq.func.count(Photo.id)).where(Photo.candidate_id == cand.id)
                 ).scalar_one()
                 if already:
                     continue
                 for att in self.get_3_candidate_photo(cand.vk_id):
-                    session.add(Photo(candidate_id=cand.id, attachment=att))
-            session.commit()
+                    self.session.add(Photo(candidate_id=cand.id, attachment=att))
+            self.session.commit()
         except Exception:
-            session.rollback()
+            self.session.rollback()
             raise
 
-    def show_next_candidate(self, vk_user_id, vk, session):
+    def show_next_candidate(self, vk_user_id, vk):
         """Показывает следующего кандидата пользователю.
 
         Выбирает кандидата с id > last_shown_id, исключая из чёрного списка.
         Формирует сообщение с клавиатурой и отправляет через VK API.
         Возвращает True при успехе, False если кандидатов больше нет.
         """
-        vk_user = session.get(VKUser, vk_user_id)
+        vk_user = self.session.get(VKUser, vk_user_id)
         if vk_user is None:
             return None
         blacklisted_ids = (
             select(BlackList.candidate_id).where(BlackList.vk_user_id == vk_user_id)
         )
         candidate = (
-            session.query(Candidates)
+            self.session.query(Candidates)
             .filter(
                 Candidates.owner_id == vk_user_id,
                 Candidates.id > vk_user.last_shown_id,
@@ -302,7 +303,7 @@ class DB(ApiVK):
         if candidate is None:
             return False
         vk_user.last_shown_id = candidate.id
-        session.commit()
+        self.session.commit()
 
         text = (
             f"{candidate.name} {candidate.surname}\n"
@@ -330,46 +331,46 @@ class DB(ApiVK):
 
         return True
 
-    def add_to_favorite(self, user_id, session):
+    def add_to_favorite(self, user_id):
         """Добавляет текущего кандидата в избранное.
 
         Возвращает текстовое сообщение о результате (успех или ошибка).
         """
-        favorite_id = session.execute(
+        favorite_id = self.session.execute(
             select(VKUser.last_shown_id).where(VKUser.id == user_id)
         ).scalar_one()
         if not favorite_id:
             return "Нет активного кандидата, начните поиск"
-        exiting = session.get(Favorites, (user_id, favorite_id))
+        exiting = self.session.get(Favorites, (user_id, favorite_id))
         if not exiting:
             favorite = Favorites(vk_user_id=user_id, candidate_id=favorite_id)
-            session.add(favorite)
-        session.commit()
+            self.session.add(favorite)
+        self.session.commit()
         return "Кандидат добавлен в избранное"
 
-    def add_to_black_list(self, user_id, session):
+    def add_to_black_list(self, user_id):
         """Добавляет текущего кандидата в чёрный список.
 
         Возвращает текстовое сообщение о результате (успех или ошибка).
         """
-        ban_candidate_id = session.execute(
+        ban_candidate_id = self.session.execute(
             select(VKUser.last_shown_id).where(VKUser.id == user_id)
         ).scalar_one()
         if not ban_candidate_id:
             return "Нет активного кандидата, начните поиск"
-        exiting = session.get(BlackList, (user_id, ban_candidate_id))
+        exiting = self.session.get(BlackList, (user_id, ban_candidate_id))
         if not exiting:
             ban_candidate = BlackList(vk_user_id=user_id, candidate_id=ban_candidate_id)
-            session.add(ban_candidate)
-        session.commit()
+            self.session.add(ban_candidate)
+        self.session.commit()
         return "Кандидат добавлен в черный список"
 
-    def show_favorite_list(self, user_id, session):
+    def show_favorite_list(self, user_id):
         """Возвращает список избранных кандидатов с их фото.
 
         Возвращает список объектов Candidates или сообщение "Нет избранных кандидатов".
         """
-        candidates = session.execute(
+        candidates = self.session.execute(
             select(Candidates)
             .join(Favorites, Favorites.candidate_id == Candidates.id)
             .where(Favorites.vk_user_id == user_id)

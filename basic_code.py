@@ -21,7 +21,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 api = ApiVK(access_token)
-db = DB(access_token)
+db = DB(access_token, session)
 
 vk = vk_api.VkApi(token=token)
 longpoll = VkLongPoll(vk,wait=25)
@@ -78,34 +78,34 @@ def handle_search(user_id):
     if not candidates:
         write_msg(user_id, "К сожалению, кандидатов не найдено")
         return
-    if db.show_next_candidate(user_id, vk, session) is False:
+    if db.show_next_candidate(user_id, vk) is False:
         write_msg(user_id, "Кандидаты закончились. Нажмите «Поиск».")
 
 def handle_next(user_id):
     """Показывает следующего кандидата по команде «далее»."""
-    if not db.show_next_candidate(vk_user_id=user_id, vk=vk, session=session):
+    if not db.show_next_candidate(vk_user_id=user_id, vk=vk):
         write_msg(user_id, "Кандидаты закончились. Нажмите «Поиск».")
         return
 
 def handle_favorite(user_id):
     """Добавляет текущего кандидата в избранное по команде «в избранное»."""
-    msg = db.add_to_favorite(session=session, user_id=user_id)
+    msg = db.add_to_favorite(user_id=user_id)
     if msg:
         write_msg(user_id, msg)
-    if not db.show_next_candidate(session=session, vk_user_id=user_id, vk=vk):
+    if not db.show_next_candidate(vk_user_id=user_id, vk=vk):
         write_msg(user_id, "Кандидаты закончились. Нажмите «Поиск».")
 
 def handle_blacklist(user_id):
     """Добавляет текущего кандидата в чёрный список по команде «в чс»."""
-    msg = db.add_to_black_list(session=session, user_id=user_id)
+    msg = db.add_to_black_list(user_id=user_id)
     if msg:
         write_msg(user_id, msg)
-    if not db.show_next_candidate(session=session, vk_user_id=user_id, vk=vk):
+    if not db.show_next_candidate(vk_user_id=user_id, vk=vk):
         write_msg(user_id, "Кандидаты закончились. Нажмите «Поиск».")
 
 def handle_show_favorite(user_id):
     """Выводит список избранных кандидатов с фото по команде «избранное»."""
-    favorites = db.show_favorite_list(session=session, user_id=user_id)
+    favorites = db.show_favorite_list(user_id=user_id)
     if not favorites:
         write_msg(user_id, "У вас пока нет избранных кандидатов.")
     else:
