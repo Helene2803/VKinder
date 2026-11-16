@@ -4,4 +4,5 @@
 .env
 VKinder.iml
 __pycache__/
-
+main.py
+f_for_vk.py
