@@ -20,10 +20,8 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
 
-
 def write_msg(vk,user_id, message, attachment=None, keyboard=None):
     """Отправляет текстовое сообщение пользователю через VK API.
-
     Поддерживает опциональное прикрепление медиа и клавиатуру.
     """
 
@@ -158,7 +156,6 @@ def main():
 
     vk = vk_api.VkApi(token=token)
     longpoll = VkLongPoll(vk,wait=25)
-
 
     try:
         for event in longpoll.listen():

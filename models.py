@@ -68,7 +68,7 @@ class Photo(Base):
     __table_args__ = (
         sq.UniqueConstraint('candidate_id', 'attachment',
                             name='uq_photo_candidate_attachment'),
-        sq.Index('ix_photo_саndidate', 'candidate_id'),
+        sq.Index('ix_photo_candidate', 'candidate_id'),
     )
 
 
@@ -101,5 +101,4 @@ class BlackList(Base):
                             name='uq_blacklist_user_candidate'),
     )
 
-Base = declarative_base()
 

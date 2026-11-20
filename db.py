@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 def make_engine(DSN):
     """Создаёт движок для работы с базой данных."""
     return sq.create_engine(DSN)
+
 def make_session(engine):
     """Создаёт сессию для работы с базой данных."""
     return sessionmaker(bind=engine)
@@ -19,14 +20,11 @@ def create_tables(engine):
     """Создаёт все таблицы в базе данных."""
     Base.metadata.create_all(engine)
 
-def insert_vk_user( client,user_id, session):
+def insert_vk_user(client, user_id, session):
     """Создаёт или обновляет профиль пользователя в таблице vk_user.
-
     Получает данные из VK (возраст, пол, город) через get_user_info.
     Возвращает объект VKUser или None, если данные неполны.
     """
-def insert_vk_user(client, user_id, session):
-    """Создаёт или обновляет профиль пользователя. None — если данных мало."""
     logger.info("insert_vk_user: start user=%s", user_id)
 
     user_info = client.get_user_info(user_id)
@@ -57,7 +55,6 @@ def insert_vk_user(client, user_id, session):
     session.commit()
     logger.info("insert_vk_user: OK, user=%s saved", user_id)
     return merged
-
 
 def insert_candidates(client, user_id, session):
     """Находит кандидатов через VK API и сохраняет в таблицу candidates.
@@ -97,7 +94,6 @@ def insert_candidates(client, user_id, session):
         session.rollback()
         raise
 
-
 def insert_photos(client, user_id_or_candidates, session):
     try:
         if isinstance(user_id_or_candidates, int):
@@ -125,7 +121,6 @@ def insert_photos(client, user_id_or_candidates, session):
     except Exception:
         session.rollback()
         raise
-
 
 def show_next_candidate(vk_user_id, vk, session):
     """Показывает следующего кандидата пользователю.
@@ -160,7 +155,11 @@ def show_next_candidate(vk_user_id, vk, session):
         f"{candidate.name} {candidate.surname}\n"
         f"{candidate.link}"
     )
-    attachment = ",".join(p.attachment for p in candidate.photos)
+
+    if candidate.photos:
+        attachment = ",".join(p.attachment for p in candidate.photos)
+    else:
+        attachment = None
 
     keyboard = VkKeyboard(one_time=False)
     keyboard.add_button("Далее", color=VkKeyboardColor.PRIMARY)
@@ -181,10 +180,8 @@ def show_next_candidate(vk_user_id, vk, session):
         logger.exception("messages.send failed for candidate id=%s", candidate.id)
     return True
 
-
 def add_to_favorite(user_id, session):
     """Добавляет текущего кандидата в избранное.
-
     Возвращает текстовое сообщение о результате (успех или ошибка).
     """
     favorite_id = session.execute(
@@ -199,10 +196,8 @@ def add_to_favorite(user_id, session):
     session.commit()
     return "Кандидат добавлен в избранное"
 
-
 def add_to_black_list(user_id, session):
     """Добавляет текущего кандидата в чёрный список.
-
     Возвращает текстовое сообщение о результате (успех или ошибка).
     """
     ban_candidate_id = session.execute(
@@ -217,10 +212,8 @@ def add_to_black_list(user_id, session):
     session.commit()
     return "Кандидат добавлен в черный список"
 
-
 def show_favorite_list(user_id, session):
     """Возвращает список избранных кандидатов с их фото.
-
     Возвращает список объектов Candidates или сообщение "Нет избранных кандидатов".
     """
     candidates = session.execute(

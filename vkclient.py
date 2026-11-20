@@ -8,6 +8,7 @@ from datetime import datetime
 load_dotenv()
 logger = logging.getLogger(__name__)
 
+
 class VKClient:
     """Обёртка над VK API для бота-знакомств.
 
@@ -108,7 +109,6 @@ class VKClient:
             'count': 1000,
             'fields': 'has_photo,city,sex,bdate',
         }
-
 
     def search_candidates(self, user_id):
         """Получаем список кандидатов.
