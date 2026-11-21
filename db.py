@@ -162,9 +162,9 @@ def show_next_candidate(vk_user_id, vk, session):
         attachment = None
 
     keyboard = VkKeyboard(one_time=False)
-    keyboard.add_button("Далее", color=VkKeyboardColor.PRIMARY)
-    keyboard.add_button("В избранное", color=VkKeyboardColor.POSITIVE)
-    keyboard.add_button("В ЧС", color=VkKeyboardColor.NEGATIVE)
+    keyboard.add_callback_button("Далее", color=VkKeyboardColor.PRIMARY, payload={"command": "next"})
+    keyboard.add_callback_button("В избранное", color=VkKeyboardColor.POSITIVE, payload={"command":"favorite"})
+    keyboard.add_callback_button("В ЧС", color=VkKeyboardColor.NEGATIVE, payload={"command":"blacklist"})
 
     params = {
         'user_id': vk_user_id,
