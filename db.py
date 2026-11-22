@@ -161,7 +161,7 @@ def show_next_candidate(vk_user_id, vk, session):
     else:
         attachment = None
 
-    keyboard = VkKeyboard(one_time=False)
+    keyboard = VkKeyboard(one_time=False, inline=True)
     keyboard.add_callback_button("Далее", color=VkKeyboardColor.PRIMARY, payload={"command": "next"})
     keyboard.add_callback_button("В избранное", color=VkKeyboardColor.POSITIVE, payload={"command":"favorite"})
     keyboard.add_callback_button("В ЧС", color=VkKeyboardColor.NEGATIVE, payload={"command":"blacklist"})
